@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { useI18n } from "@/lib/i18n";
 import { toast } from "sonner";
-import { Sparkles } from "lucide-react";
+import { Sparkles, Mail, Lock, User, Eye, EyeOff, ArrowRight } from "lucide-react";
 
 export const Route = createFileRoute("/auth")({
   component: AuthPage,
@@ -13,11 +13,13 @@ export const Route = createFileRoute("/auth")({
 function AuthPage() {
   const { t } = useI18n();
   const navigate = useNavigate();
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const [mode, setMode] = useState<"signin" | "signup" | "forgot">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -29,7 +31,17 @@ function AuthPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      if (mode === "signup") {
+      if (mode === "forgot") {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/reset-password`,
+        });
+        if (error) throw error;
+        toast.success("Verifica o teu e-mail para redefinir a password.");
+        setMode("signin");
+      } else if (mode === "signup") {
+        if (password !== confirmPassword) {
+          throw new Error("As passwords não coincidem.");
+        }
         const { error } = await supabase.auth.signUp({
           email,
           password,
@@ -74,67 +86,148 @@ function AuthPage() {
         <span className="font-serif tracking-wide">MENTOR</span>
       </Link>
 
-      <h1 className="font-serif text-3xl mb-2">
-        {mode === "signin" ? t("cta.signin") : t("cta.signup")}
-      </h1>
-      <p className="text-muted-foreground text-sm mb-8">{t("app.tagline")}</p>
-
-      <button
-        onClick={handleGoogle}
-        className="w-full rounded-xl border border-border bg-card py-3.5 text-sm font-medium hover:border-primary/50 transition"
-      >
-        {t("cta.google")}
-      </button>
-
-      <div className="flex items-center gap-3 my-6 text-xs text-muted-foreground">
-        <div className="flex-1 h-px bg-border" />
-        <span>or</span>
-        <div className="flex-1 h-px bg-border" />
+      <div className="mb-8">
+        <h1 className="font-serif text-3xl mb-2">
+          {mode === "signin" && t("cta.signin")}
+          {mode === "signup" && t("cta.signup")}
+          {mode === "forgot" && "Recuperar password"}
+        </h1>
+        <p className="text-muted-foreground text-sm">
+          {mode === "forgot"
+            ? "Enviamos-te um link para redefinir a tua password."
+            : t("app.tagline")}
+        </p>
       </div>
+
+      {mode !== "forgot" && (
+        <>
+          <button
+            onClick={handleGoogle}
+            className="w-full rounded-xl border border-border bg-card py-3.5 text-sm font-medium hover:border-primary/50 hover:bg-card/70 transition flex items-center justify-center gap-2"
+          >
+            <svg className="h-4 w-4" viewBox="0 0 24 24" aria-hidden>
+              <path fill="#EA4335" d="M12 10.2v3.9h5.5c-.24 1.4-1.7 4.1-5.5 4.1-3.3 0-6-2.7-6-6.1s2.7-6.1 6-6.1c1.9 0 3.1.8 3.8 1.5l2.6-2.5C16.8 3.4 14.6 2.4 12 2.4 6.7 2.4 2.4 6.7 2.4 12S6.7 21.6 12 21.6c6.9 0 9.6-4.8 9.6-9.3 0-.6 0-1.1-.1-1.6H12z" />
+            </svg>
+            {t("cta.google")}
+          </button>
+
+          <div className="flex items-center gap-3 my-6 text-xs text-muted-foreground">
+            <div className="flex-1 h-px bg-border" />
+            <span>ou com e-mail</span>
+            <div className="flex-1 h-px bg-border" />
+          </div>
+        </>
+      )}
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-3">
         {mode === "signup" && (
-          <input
-            className="rounded-xl bg-input border border-border px-4 py-3 text-sm outline-none focus:border-primary"
-            placeholder={t("auth.name")}
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
+          <div className="relative">
+            <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <input
+              className="w-full rounded-xl bg-input border border-border pl-10 pr-4 py-3.5 text-sm outline-none focus:border-primary transition"
+              placeholder={t("auth.name")}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+          </div>
         )}
-        <input
-          type="email"
-          required
-          className="rounded-xl bg-input border border-border px-4 py-3 text-sm outline-none focus:border-primary"
-          placeholder={t("auth.email")}
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-        <input
-          type="password"
-          required
-          minLength={6}
-          className="rounded-xl bg-input border border-border px-4 py-3 text-sm outline-none focus:border-primary"
-          placeholder={t("auth.password")}
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
+
+        <div className="relative">
+          <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <input
+            type="email"
+            required
+            autoComplete="email"
+            className="w-full rounded-xl bg-input border border-border pl-10 pr-4 py-3.5 text-sm outline-none focus:border-primary transition"
+            placeholder={t("auth.email")}
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+        </div>
+
+        {mode !== "forgot" && (
+          <div className="relative">
+            <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <input
+              type={showPassword ? "text" : "password"}
+              required
+              minLength={6}
+              autoComplete={mode === "signup" ? "new-password" : "current-password"}
+              className="w-full rounded-xl bg-input border border-border pl-10 pr-11 py-3.5 text-sm outline-none focus:border-primary transition"
+              placeholder={t("auth.password")}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((v) => !v)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground transition"
+              aria-label={showPassword ? "Esconder password" : "Mostrar password"}
+            >
+              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
+          </div>
+        )}
+
+        {mode === "signup" && (
+          <div className="relative">
+            <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <input
+              type={showPassword ? "text" : "password"}
+              required
+              minLength={6}
+              autoComplete="new-password"
+              className="w-full rounded-xl bg-input border border-border pl-10 pr-4 py-3.5 text-sm outline-none focus:border-primary transition"
+              placeholder="Confirmar password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+            />
+          </div>
+        )}
+
+        {mode === "signin" && (
+          <button
+            type="button"
+            onClick={() => setMode("forgot")}
+            className="self-end text-xs text-muted-foreground hover:text-primary transition -mt-1"
+          >
+            Esqueci a minha password
+          </button>
+        )}
+
         <button
           disabled={loading}
-          className="mt-2 rounded-full bg-primary text-primary-foreground py-3.5 font-medium disabled:opacity-60"
+          className="mt-2 rounded-full bg-primary text-primary-foreground py-3.5 font-medium disabled:opacity-60 flex items-center justify-center gap-2 hover:opacity-95 transition"
         >
-          {loading ? "..." : mode === "signin" ? t("cta.signin") : t("cta.signup")}
+          {loading
+            ? "..."
+            : mode === "signin"
+            ? t("cta.signin")
+            : mode === "signup"
+            ? t("cta.signup")
+            : "Enviar link"}
+          {!loading && <ArrowRight className="h-4 w-4" />}
         </button>
       </form>
 
-      <button
-        onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
-        className="mt-6 text-sm text-muted-foreground hover:text-primary transition"
-      >
-        {mode === "signin" ? t("auth.no") : t("auth.have")}{" "}
-        <span className="text-primary">
-          {mode === "signin" ? t("cta.signup") : t("cta.signin")}
-        </span>
-      </button>
+      {mode === "forgot" ? (
+        <button
+          onClick={() => setMode("signin")}
+          className="mt-6 text-sm text-muted-foreground hover:text-primary transition"
+        >
+          Voltar ao <span className="text-primary">{t("cta.signin")}</span>
+        </button>
+      ) : (
+        <button
+          onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
+          className="mt-6 text-sm text-muted-foreground hover:text-primary transition"
+        >
+          {mode === "signin" ? t("auth.no") : t("auth.have")}{" "}
+          <span className="text-primary">
+            {mode === "signin" ? t("cta.signup") : t("cta.signin")}
+          </span>
+        </button>
+      )}
     </div>
   );
 }
