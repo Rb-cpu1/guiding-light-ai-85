@@ -38,16 +38,52 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_missions: {
+        Row: {
+          body: string
+          completed: boolean
+          completed_at: string | null
+          created_at: string
+          id: string
+          mission_date: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          body: string
+          completed?: boolean
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          mission_date?: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          completed?: boolean
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          mission_date?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
           faith_level: string | null
           id: string
           language: string
+          last_mission_date: string | null
+          longest_streak: number
           main_struggle: string | null
           mentor_mode: string
           name: string | null
           onboarded: boolean
+          streak_count: number
           updated_at: string
         }
         Insert: {
@@ -55,10 +91,13 @@ export type Database = {
           faith_level?: string | null
           id: string
           language?: string
+          last_mission_date?: string | null
+          longest_streak?: number
           main_struggle?: string | null
           mentor_mode?: string
           name?: string | null
           onboarded?: boolean
+          streak_count?: number
           updated_at?: string
         }
         Update: {
@@ -66,10 +105,13 @@ export type Database = {
           faith_level?: string | null
           id?: string
           language?: string
+          last_mission_date?: string | null
+          longest_streak?: number
           main_struggle?: string | null
           mentor_mode?: string
           name?: string | null
           onboarded?: boolean
+          streak_count?: number
           updated_at?: string
         }
         Relationships: []
