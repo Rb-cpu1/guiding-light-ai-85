@@ -45,8 +45,14 @@ function Landing() {
         </div>
       </main>
 
-      <footer className="pt-6 text-center text-xs text-muted-foreground">
-        © MENTOR · 2026
+      <footer className="pt-6 text-center text-xs text-muted-foreground space-y-2">
+        <div className="flex justify-center gap-4">
+          <Link to="/pricing" className="hover:text-primary">Preços</Link>
+          <Link to="/terms" className="hover:text-primary">Termos</Link>
+          <Link to="/privacy" className="hover:text-primary">Privacidade</Link>
+          <Link to="/refund" className="hover:text-primary">Reembolso</Link>
+        </div>
+        <p>© MENTOR LTDA · 2026</p>
       </footer>
     </div>
   );
