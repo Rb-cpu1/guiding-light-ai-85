@@ -4,7 +4,7 @@ import { z } from "zod";
 import { buildMentorSystemPrompt, DAILY_VERSE_PROMPT, type MentorMode } from "./mentor-prompt";
 import { callLovableAiChat } from "./ai-gateway.server";
 
-const FREE_DAILY_LIMIT = 3;
+const FREE_DAILY_LIMIT = 5;
 
 const sendSchema = z.object({ message: z.string().min(1).max(4000) });
 
@@ -20,17 +20,34 @@ export const sendMentorMessage = createServerFn({ method: "POST" })
       .eq("id", userId)
       .maybeSingle();
 
-    const startOfDay = new Date();
-    startOfDay.setHours(0, 0, 0, 0);
-    const { count } = await supabase
-      .from("conversations")
-      .select("id", { count: "exact", head: true })
+    // Premium/lifetime subscribers bypass the daily limit.
+    const { data: sub } = await supabase
+      .from("subscriptions")
+      .select("status, current_period_end")
       .eq("user_id", userId)
-      .eq("role", "user")
-      .gte("created_at", startOfDay.toISOString());
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const now = Date.now();
+    const end = sub?.current_period_end ? new Date(sub.current_period_end).getTime() : null;
+    const isPremium = !!sub && (
+      (["active", "trialing", "past_due"].includes(sub.status) && (end === null || end > now)) ||
+      (sub.status === "canceled" && end !== null && end > now)
+    );
 
-    if ((count ?? 0) >= FREE_DAILY_LIMIT) {
-      return { limitReached: true as const };
+    if (!isPremium) {
+      const startOfDay = new Date();
+      startOfDay.setHours(0, 0, 0, 0);
+      const { count } = await supabase
+        .from("conversations")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", userId)
+        .eq("role", "user")
+        .gte("created_at", startOfDay.toISOString());
+
+      if ((count ?? 0) >= FREE_DAILY_LIMIT) {
+        return { limitReached: true as const };
+      }
     }
 
     const lang = (profile?.language as "pt" | "en") ?? "pt";
