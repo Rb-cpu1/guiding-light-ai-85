@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { getDailyVerse, getMyProfile } from "@/lib/mentor.functions";
 import { getTodayMission, completeTodayMission } from "@/lib/missions.functions";
 import { useI18n } from "@/lib/i18n";
-import { MessageCircle, AlertCircle, Sparkles, Flame, Check } from "lucide-react";
+import { MessageCircle, AlertCircle, Flame, Check } from "lucide-react";
 import { BottomNav } from "@/components/BottomNav";
 
 export const Route = createFileRoute("/_authenticated/home")({
