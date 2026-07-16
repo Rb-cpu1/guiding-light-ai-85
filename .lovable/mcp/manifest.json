@@ -1,0 +1,119 @@
+{
+  "version": 1,
+  "sdk_version": "0.22.2",
+  "path": "/mcp",
+  "auth": {
+    "type": "oauth",
+    "issuer": "https://jjbubfnmokvnrcgizltt.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
+  },
+  "mcp": {
+    "server": {
+      "name": "mentor-mcp",
+      "version": "0.1.0",
+      "title": "MENTOR"
+    },
+    "tools": [
+      {
+        "name": "get_profile",
+        "title": "Obter perfil",
+        "description": "Devolve o perfil do utilizador autenticado (nome, idioma, modo do mentor, nível de fé, principal dificuldade, streak de missões).",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_subscription",
+        "title": "Obter subscrição",
+        "description": "Devolve o estado da subscrição Premium do utilizador (plano, status, data de renovação).",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_conversation",
+        "title": "Listar conversa",
+        "description": "Devolve as últimas mensagens da conversa entre o utilizador e o mentor (ordem cronológica).",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "limit": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 200,
+              "description": "Número máximo de mensagens (padrão 50)."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "send_mentor_message",
+        "title": "Enviar mensagem ao mentor",
+        "description": "Envia uma mensagem ao mentor pessoal do utilizador e devolve a resposta. Respeita o limite diário do plano gratuito (5 mensagens/dia).",
+        "annotations": {
+          "readOnlyHint": false,
+          "openWorldHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "message": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 4000,
+              "description": "Mensagem para o mentor."
+            }
+          },
+          "required": [
+            "message"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_today_mission",
+        "title": "Obter missão de hoje",
+        "description": "Devolve a missão diária de hoje do utilizador (se existir) e se está concluída.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
