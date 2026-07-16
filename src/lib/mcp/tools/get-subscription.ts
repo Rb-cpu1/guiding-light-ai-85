@@ -1,5 +1,5 @@
 import { defineTool } from "@lovable.dev/mcp-js";
-import { requireAuth, supabaseForUser } from "../supabase-for-user";
+import { NOT_AUTHENTICATED, authedUserId, supabaseForUser } from "../supabase-for-user";
 
 export default defineTool({
   name: "get_subscription",
@@ -8,13 +8,13 @@ export default defineTool({
   inputSchema: {},
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async (_input, ctx) => {
-    const err = requireAuth(ctx);
-    if (err) return err;
+    const userId = authedUserId(ctx);
+    if (!userId) return NOT_AUTHENTICATED;
     const supabase = supabaseForUser(ctx);
     const { data, error } = await supabase
       .from("subscriptions")
       .select("status, price_id, product_id, current_period_end, cancel_at_period_end, environment")
-      .eq("user_id", ctx.getUserId())
+      .eq("user_id", userId)
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();

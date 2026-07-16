@@ -13,10 +13,13 @@ export function supabaseForUser(ctx: ToolContext) {
   );
 }
 
-export function requireAuth(ctx: ToolContext): { error: { content: { type: "text"; text: string }[]; isError: true } } | { userId: string } {
+export const NOT_AUTHENTICATED = {
+  content: [{ type: "text" as const, text: "Não autenticado." }],
+  isError: true as const,
+};
+
+export function authedUserId(ctx: ToolContext): string | null {
   const userId = ctx.getUserId();
-  if (!ctx.isAuthenticated() || !userId) {
-    return { error: { content: [{ type: "text" as const, text: "Não autenticado." }], isError: true } };
-  }
-  return { userId };
+  if (!ctx.isAuthenticated() || !userId) return null;
+  return userId;
 }

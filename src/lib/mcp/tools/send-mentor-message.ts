@@ -1,6 +1,6 @@
 import { defineTool } from "@lovable.dev/mcp-js";
 import { z } from "zod";
-import { requireAuth, supabaseForUser } from "../supabase-for-user";
+import { NOT_AUTHENTICATED, authedUserId, supabaseForUser } from "../supabase-for-user";
 
 export default defineTool({
   name: "send_mentor_message",
@@ -11,10 +11,9 @@ export default defineTool({
   },
   annotations: { readOnlyHint: false, openWorldHint: true },
   handler: async ({ message }, ctx) => {
-    const err = requireAuth(ctx);
-    if (err) return err;
+    const userId = authedUserId(ctx);
+    if (!userId) return NOT_AUTHENTICATED;
     const supabase = supabaseForUser(ctx);
-    const userId = ctx.getUserId();
 
     const { buildMentorSystemPrompt } = await import("@/lib/mentor-prompt");
     const { callLovableAiChat } = await import("@/lib/ai-gateway.server");

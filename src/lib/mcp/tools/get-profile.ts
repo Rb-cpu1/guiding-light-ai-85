@@ -1,5 +1,5 @@
 import { defineTool } from "@lovable.dev/mcp-js";
-import { requireAuth, supabaseForUser } from "../supabase-for-user";
+import { NOT_AUTHENTICATED, authedUserId, supabaseForUser } from "../supabase-for-user";
 
 export default defineTool({
   name: "get_profile",
@@ -8,13 +8,13 @@ export default defineTool({
   inputSchema: {},
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async (_input, ctx) => {
-    const err = requireAuth(ctx);
-    if (err) return err;
+    const userId = authedUserId(ctx);
+    if (!userId) return NOT_AUTHENTICATED;
     const supabase = supabaseForUser(ctx);
     const { data, error } = await supabase
       .from("profiles")
       .select("name, language, mentor_mode, faith_level, main_struggle, streak_count, longest_streak, onboarded")
-      .eq("id", ctx.getUserId())
+      .eq("id", userId)
       .maybeSingle();
     if (error) return { content: [{ type: "text", text: error.message }], isError: true };
     return {
