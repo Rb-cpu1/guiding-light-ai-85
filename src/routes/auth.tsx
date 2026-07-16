@@ -7,12 +7,21 @@ import { toast } from "sonner";
 import { Sparkles, Mail, Lock, User, Eye, EyeOff, ArrowRight } from "lucide-react";
 
 export const Route = createFileRoute("/auth")({
+  validateSearch: (s: Record<string, unknown>) => ({
+    next: typeof s.next === "string" ? s.next : "",
+  }),
   component: AuthPage,
 });
 
 function AuthPage() {
   const { t } = useI18n();
   const navigate = useNavigate();
+  const { next } = Route.useSearch();
+  const safeNext = next && next.startsWith("/") && !next.startsWith("//") ? next : null;
+  const goNext = () => {
+    if (safeNext) window.location.href = safeNext;
+    else navigate({ to: "/home" });
+  };
   const [mode, setMode] = useState<"signin" | "signup" | "forgot">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -23,9 +32,10 @@ function AuthPage() {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate({ to: "/home" });
+      if (data.session) goNext();
     });
-  }, [navigate]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -47,16 +57,17 @@ function AuthPage() {
           password,
           options: {
             data: { name },
-            emailRedirectTo: `${window.location.origin}/home`,
+            emailRedirectTo: `${window.location.origin}${safeNext ?? "/home"}`,
           },
         });
         if (error) throw error;
         toast.success(t("cta.signup"));
-        navigate({ to: "/onboarding" });
+        if (safeNext) goNext();
+        else navigate({ to: "/onboarding" });
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        navigate({ to: "/home" });
+        goNext();
       }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Error");
@@ -67,14 +78,14 @@ function AuthPage() {
 
   async function handleGoogle() {
     const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
+      redirect_uri: safeNext ? `${window.location.origin}${safeNext}` : window.location.origin,
     });
     if (result.error) {
       toast.error(result.error.message ?? "Google sign-in failed");
       return;
     }
     if (result.redirected) return;
-    navigate({ to: "/home" });
+    goNext();
   }
 
   return (
