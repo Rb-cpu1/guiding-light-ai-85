@@ -88,9 +88,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         content: "Um mentor pessoal com IA que combina sabedoria bíblica, filosofia e psicologia para dar conselhos diretos e práticos.",
       },
       { property: "og:title", content: "MENTOR — Sabedoria que caminha com você" },
-      { property: "og:description", content: "Conselho direto, fundamentado na Bíblia e nos grandes pensadores." },
+      { property: "og:description", content: "Um mentor pessoal com IA que combina sabedoria bíblica, filosofia e psicologia para dar conselhos diretos e práticos." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "MENTOR — Sabedoria que caminha com você" },
+      { name: "twitter:description", content: "Um mentor pessoal com IA que combina sabedoria bíblica, filosofia e psicologia para dar conselhos diretos e práticos." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/cc26d3c3-1c4e-43ff-8068-fb41c189e746/id-preview-724b7a60--8624f62f-d703-4915-b404-cc6846314a8e.lovable.app-1784226646293.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/cc26d3c3-1c4e-43ff-8068-fb41c189e746/id-preview-724b7a60--8624f62f-d703-4915-b404-cc6846314a8e.lovable.app-1784226646293.png" },
     ],
     links: [
       {
