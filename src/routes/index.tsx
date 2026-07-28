@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Link } from "@tanstack/react-router";
 import { useI18n } from "@/lib/i18n";
+import { LangSwitcher } from "@/components/LangSwitcher";
 import { Sparkles, Compass, BookOpen } from "lucide-react";
 
 export const Route = createFileRoute("/")({
@@ -8,7 +9,7 @@ export const Route = createFileRoute("/")({
 });
 
 function Landing() {
-  const { t, lang, setLang } = useI18n();
+  const { t } = useI18n();
   return (
     <div className="app-frame flex flex-col px-6 py-10">
       <header className="flex items-center justify-between">
@@ -18,12 +19,7 @@ function Landing() {
           </div>
           <span className="font-serif text-lg tracking-wide">{t("app.name")}</span>
         </div>
-        <button
-          onClick={() => setLang(lang === "pt" ? "en" : "pt")}
-          className="text-xs uppercase tracking-widest text-muted-foreground hover:text-primary transition"
-        >
-          {lang === "pt" ? "EN" : "PT"}
-        </button>
+        <LangSwitcher />
       </header>
 
       <main className="flex-1 flex flex-col justify-center py-16">

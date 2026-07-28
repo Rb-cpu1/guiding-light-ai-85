@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { getMyProfile, updateProfile } from "@/lib/mentor.functions";
-import { useI18n, type Lang } from "@/lib/i18n";
+import { useI18n, type Lang, LANG_META } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
 import { BottomNav } from "@/components/BottomNav";
 import { toast } from "sonner";
@@ -127,11 +127,12 @@ function Profile() {
             <button
               key={l}
               onClick={() => updateLang(l)}
-              className={`rounded-xl border px-3 py-2.5 text-sm ${
+              className={`flex items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-sm ${
                 lang === l ? "border-primary bg-primary/10" : "border-border"
               }`}
             >
-              {l === "pt" ? "Português" : "English"}
+              <span className="text-base leading-none">{LANG_META[l].flag}</span>
+              <span>{LANG_META[l].label}</span>
             </button>
           ))}
         </div>
