@@ -9,7 +9,7 @@ export const Route = createFileRoute("/")({
 });
 
 function Landing() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   return (
     <div className="app-frame flex flex-col px-6 py-10">
       <header className="flex items-center justify-between">
