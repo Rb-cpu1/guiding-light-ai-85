@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { updateProfile } from "@/lib/mentor.functions";
 import { useI18n } from "@/lib/i18n";
+import { LangSwitcher } from "@/components/LangSwitcher";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/onboarding")({
@@ -10,7 +11,7 @@ export const Route = createFileRoute("/_authenticated/onboarding")({
 });
 
 function Onboarding() {
-  const { t, lang, setLang } = useI18n();
+  const { t, lang } = useI18n();
   const navigate = useNavigate();
   const save = useServerFn(updateProfile);
   const [step, setStep] = useState(0);
@@ -70,12 +71,7 @@ function Onboarding() {
             <div key={i} className={`h-1 w-8 rounded-full ${i <= step ? "bg-primary" : "bg-muted"}`} />
           ))}
         </div>
-        <button
-          onClick={() => setLang(lang === "pt" ? "en" : "pt")}
-          className="text-xs uppercase tracking-widest text-muted-foreground"
-        >
-          {lang === "pt" ? "EN" : "PT"}
-        </button>
+        <LangSwitcher />
       </div>
 
       <div className="flex-1 flex flex-col justify-center">
