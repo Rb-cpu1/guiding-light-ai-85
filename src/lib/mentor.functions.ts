@@ -6,7 +6,10 @@ import { callLovableAiChat } from "./ai-gateway.server";
 
 const FREE_DAILY_LIMIT = 5;
 
-const sendSchema = z.object({ message: z.string().min(1).max(4000) });
+const sendSchema = z.object({
+  message: z.string().min(1).max(4000),
+  thread_id: z.string().uuid().optional(),
+});
 
 export const sendMentorMessage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -46,7 +49,7 @@ export const sendMentorMessage = createServerFn({ method: "POST" })
         .gte("created_at", startOfDay.toISOString());
 
       if ((count ?? 0) >= FREE_DAILY_LIMIT) {
-        return { limitReached: true as const };
+        return { limitReached: true as const, threadId: data.thread_id ?? null };
       }
     }
 
@@ -60,18 +63,45 @@ export const sendMentorMessage = createServerFn({ method: "POST" })
       mainStruggle: profile?.main_struggle,
     });
 
+    // Resolve/create thread
+    let threadId = data.thread_id ?? null;
+    let isNewThread = false;
+    if (threadId) {
+      const { data: t } = await supabase
+        .from("chat_threads")
+        .select("id")
+        .eq("id", threadId)
+        .eq("user_id", userId)
+        .maybeSingle();
+      if (!t) threadId = null;
+    }
+    if (!threadId) {
+      const provisionalTitle = data.message.slice(0, 60);
+      const { data: created, error: threadErr } = await supabase
+        .from("chat_threads")
+        .insert({ user_id: userId, title: provisionalTitle })
+        .select("id")
+        .single();
+      if (threadErr || !created) throw new Error(threadErr?.message ?? "Failed to create thread");
+      threadId = created.id;
+      isNewThread = true;
+    }
+
     const { data: history } = await supabase
       .from("conversations")
       .select("role, content")
       .eq("user_id", userId)
-      .order("created_at", { ascending: false })
-      .limit(10);
-    const priorMessages = (history ?? [])
-      .reverse()
-      .map((m) => ({ role: m.role as "user" | "assistant", content: m.content }));
+      .eq("thread_id", threadId)
+      .order("created_at", { ascending: true })
+      .limit(200);
+    const priorMessages = (history ?? []).map((m) => ({
+      role: m.role as "user" | "assistant",
+      content: m.content,
+    }));
 
     await supabase.from("conversations").insert({
       user_id: userId,
+      thread_id: threadId,
       role: "user",
       content: data.message,
     });
@@ -83,24 +113,102 @@ export const sendMentorMessage = createServerFn({ method: "POST" })
 
     await supabase.from("conversations").insert({
       user_id: userId,
+      thread_id: threadId,
       role: "assistant",
       content: reply,
     });
 
-    return { limitReached: false as const, reply };
+    // Touch thread updated_at (and set proper title on first message)
+    if (isNewThread) {
+      await supabase
+        .from("chat_threads")
+        .update({ title: data.message.slice(0, 60), updated_at: new Date().toISOString() })
+        .eq("id", threadId);
+    } else {
+      await supabase
+        .from("chat_threads")
+        .update({ updated_at: new Date().toISOString() })
+        .eq("id", threadId);
+    }
+
+    return { limitReached: false as const, reply, threadId };
   });
 
-export const listConversation = createServerFn({ method: "GET" })
+const listConvSchema = z.object({ thread_id: z.string().uuid().optional() });
+
+export const listConversation = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
-    const { data, error } = await context.supabase
+  .inputValidator((v: unknown) => listConvSchema.parse(v ?? {}))
+  .handler(async ({ data, context }) => {
+    let q = context.supabase
       .from("conversations")
       .select("id, role, content, created_at")
       .eq("user_id", context.userId)
       .order("created_at", { ascending: true })
       .limit(200);
+    if (data.thread_id) q = q.eq("thread_id", data.thread_id);
+    const { data: rows, error } = await q;
+    if (error) throw new Error(error.message);
+    return rows ?? [];
+  });
+
+// ---------- Threads ----------
+export const listThreads = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data, error } = await context.supabase
+      .from("chat_threads")
+      .select("id, title, created_at, updated_at")
+      .eq("user_id", context.userId)
+      .order("updated_at", { ascending: false })
+      .limit(100);
     if (error) throw new Error(error.message);
     return data ?? [];
+  });
+
+export const createThread = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data, error } = await context.supabase
+      .from("chat_threads")
+      .insert({ user_id: context.userId, title: "Nova conversa" })
+      .select("id")
+      .single();
+    if (error || !data) throw new Error(error?.message ?? "Failed");
+    return { id: data.id };
+  });
+
+const threadIdSchema = z.object({ thread_id: z.string().uuid() });
+
+export const deleteThread = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((v: unknown) => threadIdSchema.parse(v))
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase
+      .from("chat_threads")
+      .delete()
+      .eq("id", data.thread_id)
+      .eq("user_id", context.userId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+const renameSchema = z.object({
+  thread_id: z.string().uuid(),
+  title: z.string().min(1).max(120),
+});
+
+export const renameThread = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((v: unknown) => renameSchema.parse(v))
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase
+      .from("chat_threads")
+      .update({ title: data.title })
+      .eq("id", data.thread_id)
+      .eq("user_id", context.userId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
   });
 
 const dailyVerseSchema = z.object({ lang: z.enum(["pt", "en"]) });

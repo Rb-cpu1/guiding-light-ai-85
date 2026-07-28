@@ -70,19 +70,42 @@ export default defineTool({
       .select("role, content")
       .eq("user_id", userId)
       .order("created_at", { ascending: false })
-      .limit(10);
+      .limit(20);
     const priorMessages = (history ?? [])
       .reverse()
       .map((m) => ({ role: m.role as "user" | "assistant", content: m.content }));
 
-    await supabase.from("conversations").insert({ user_id: userId, role: "user", content: message });
+    // Resolve a thread: reuse the most recent one or create a new one.
+    let threadId: string | null = null;
+    const { data: latestThread } = await supabase
+      .from("chat_threads")
+      .select("id")
+      .eq("user_id", userId)
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    threadId = latestThread?.id ?? null;
+    if (!threadId) {
+      const { data: created } = await supabase
+        .from("chat_threads")
+        .insert({ user_id: userId, title: message.slice(0, 60) })
+        .select("id")
+        .single();
+      threadId = created?.id ?? null;
+    }
+    if (!threadId) {
+      return { content: [{ type: "text", text: "Failed to resolve thread" }], isError: true };
+    }
+
+    await supabase.from("conversations").insert({ user_id: userId, thread_id: threadId, role: "user", content: message });
 
     const reply = await callLovableAiChat({
       system,
       messages: [...priorMessages, { role: "user", content: message }],
     });
 
-    await supabase.from("conversations").insert({ user_id: userId, role: "assistant", content: reply });
+    await supabase.from("conversations").insert({ user_id: userId, thread_id: threadId, role: "assistant", content: reply });
+    await supabase.from("chat_threads").update({ updated_at: new Date().toISOString() }).eq("id", threadId);
 
     return {
       content: [{ type: "text", text: reply }],
