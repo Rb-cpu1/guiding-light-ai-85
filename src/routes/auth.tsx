@@ -1,7 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable/index";
 import { useI18n } from "@/lib/i18n";
 import { toast } from "sonner";
 import { Sparkles, Mail, Lock, User, Eye, EyeOff, ArrowRight } from "lucide-react";
@@ -76,18 +75,6 @@ function AuthPage() {
     }
   }
 
-  async function handleGoogle() {
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: safeNext ? `${window.location.origin}${safeNext}` : window.location.origin,
-    });
-    if (result.error) {
-      toast.error(result.error.message ?? "Google sign-in failed");
-      return;
-    }
-    if (result.redirected) return;
-    goNext();
-  }
-
   return (
     <div className="app-frame flex flex-col px-6 py-10 min-h-dvh">
       <Link to="/" className="flex items-center gap-2 mb-10">
@@ -109,26 +96,6 @@ function AuthPage() {
             : t("app.tagline")}
         </p>
       </div>
-
-      {mode !== "forgot" && (
-        <>
-          <button
-            onClick={handleGoogle}
-            className="w-full rounded-xl border border-border bg-card py-3.5 text-sm font-medium hover:border-primary/50 hover:bg-card/70 transition flex items-center justify-center gap-2"
-          >
-            <svg className="h-4 w-4" viewBox="0 0 24 24" aria-hidden>
-              <path fill="#EA4335" d="M12 10.2v3.9h5.5c-.24 1.4-1.7 4.1-5.5 4.1-3.3 0-6-2.7-6-6.1s2.7-6.1 6-6.1c1.9 0 3.1.8 3.8 1.5l2.6-2.5C16.8 3.4 14.6 2.4 12 2.4 6.7 2.4 2.4 6.7 2.4 12S6.7 21.6 12 21.6c6.9 0 9.6-4.8 9.6-9.3 0-.6 0-1.1-.1-1.6H12z" />
-            </svg>
-            {t("cta.google")}
-          </button>
-
-          <div className="flex items-center gap-3 my-6 text-xs text-muted-foreground">
-            <div className="flex-1 h-px bg-border" />
-            <span>ou com e-mail</span>
-            <div className="flex-1 h-px bg-border" />
-          </div>
-        </>
-      )}
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-3">
         {mode === "signup" && (
