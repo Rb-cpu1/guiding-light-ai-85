@@ -171,3 +171,7 @@
   margin-inline: auto;
   position: relative;
 }
+
+#lovable-badge {
+  display: none !important;
+}
