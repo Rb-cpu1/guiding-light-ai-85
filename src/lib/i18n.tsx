@@ -134,6 +134,66 @@ const en: Dict = {
 
 const dicts: Record<Lang, Dict> = { pt, en };
 
+// Countries where Portuguese is the primary/co-official language.
+const PT_COUNTRIES = new Set([
+  "PT", "BR", "AO", "MZ", "CV", "GW", "ST", "TL", "MO",
+]);
+
+// Rough IANA timezone → country mapping for auto-detect.
+const TZ_TO_COUNTRY: Record<string, string> = {
+  "Europe/Lisbon": "PT",
+  "Atlantic/Azores": "PT",
+  "Atlantic/Madeira": "PT",
+  "America/Sao_Paulo": "BR",
+  "America/Bahia": "BR",
+  "America/Fortaleza": "BR",
+  "America/Recife": "BR",
+  "America/Belem": "BR",
+  "America/Manaus": "BR",
+  "America/Cuiaba": "BR",
+  "America/Campo_Grande": "BR",
+  "America/Porto_Velho": "BR",
+  "America/Rio_Branco": "BR",
+  "America/Noronha": "BR",
+  "America/Maceio": "BR",
+  "America/Araguaina": "BR",
+  "America/Boa_Vista": "BR",
+  "Africa/Luanda": "AO",
+  "Africa/Maputo": "MZ",
+  "Atlantic/Cape_Verde": "CV",
+  "Africa/Bissau": "GW",
+  "Africa/Sao_Tome": "ST",
+  "Asia/Dili": "TL",
+  "Asia/Macau": "MO",
+};
+
+function detectLangFromEnv(): Lang {
+  if (typeof window === "undefined") return "pt";
+  try {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const country = TZ_TO_COUNTRY[tz];
+    if (country && PT_COUNTRIES.has(country)) return "pt";
+    if (country) return "en";
+  } catch {
+    // ignore
+  }
+  const langs = (navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language]) as string[];
+  for (const l of langs) {
+    const lower = (l || "").toLowerCase();
+    if (lower.startsWith("pt")) return "pt";
+  }
+  for (const l of langs) {
+    const lower = (l || "").toLowerCase();
+    if (lower.startsWith("en")) return "en";
+  }
+  return "pt";
+}
+
+export const LANG_META: Record<Lang, { flag: string; label: string; short: string }> = {
+  pt: { flag: "🇵🇹", label: "Português", short: "PT" },
+  en: { flag: "🇺🇸", label: "English", short: "EN" },
+};
+
 type I18nCtx = { lang: Lang; t: (k: string) => string; setLang: (l: Lang) => void };
 const Ctx = createContext<I18nCtx>({ lang: "pt", t: (k) => k, setLang: () => {} });
 
@@ -141,8 +201,11 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   const [lang, setLangState] = useState<Lang>("pt");
   useEffect(() => {
     const stored = typeof window !== "undefined" ? (localStorage.getItem("mentor.lang") as Lang | null) : null;
-    if (stored === "pt" || stored === "en") setLangState(stored);
-    else if (typeof navigator !== "undefined" && navigator.language.startsWith("en")) setLangState("en");
+    if (stored === "pt" || stored === "en") {
+      setLangState(stored);
+    } else {
+      setLangState(detectLangFromEnv());
+    }
   }, []);
   const setLang = (l: Lang) => {
     setLangState(l);
