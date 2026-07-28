@@ -14,12 +14,37 @@ export type Database = {
   }
   public: {
     Tables: {
+      chat_threads: {
+        Row: {
+          created_at: string
+          id: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          title?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       conversations: {
         Row: {
           content: string
           created_at: string
           id: string
           role: string
+          thread_id: string
           user_id: string
         }
         Insert: {
@@ -27,6 +52,7 @@ export type Database = {
           created_at?: string
           id?: string
           role: string
+          thread_id: string
           user_id: string
         }
         Update: {
@@ -34,9 +60,18 @@ export type Database = {
           created_at?: string
           id?: string
           role?: string
+          thread_id?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "conversations_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "chat_threads"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       daily_missions: {
         Row: {

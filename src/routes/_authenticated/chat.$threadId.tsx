@@ -8,11 +8,12 @@ import { toast } from "sonner";
 
 type Msg = { role: "user" | "assistant"; content: string };
 
-export const Route = createFileRoute("/_authenticated/chat")({
-  component: Chat,
+export const Route = createFileRoute("/_authenticated/chat/$threadId")({
+  component: ChatThread,
 });
 
-function Chat() {
+function ChatThread() {
+  const { threadId } = Route.useParams();
   const { t } = useI18n();
   const list = useServerFn(listConversation);
   const send = useServerFn(sendMentorMessage);
@@ -21,12 +22,15 @@ function Chat() {
   const [sending, setSending] = useState(false);
   const [limitReached, setLimitReached] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    list().then((rows) => {
+    setMessages([]);
+    list({ data: { thread_id: threadId } }).then((rows) => {
       setMessages(rows.map((r) => ({ role: r.role as "user" | "assistant", content: r.content })));
     });
-  }, [list]);
+    inputRef.current?.focus();
+  }, [list, threadId]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
@@ -40,7 +44,7 @@ function Chat() {
     setMessages((m) => [...m, { role: "user", content: msg }]);
     setSending(true);
     try {
-      const result = await send({ data: { message: msg } });
+      const result = await send({ data: { message: msg, thread_id: threadId } });
       if (result.limitReached) {
         setLimitReached(true);
       } else {
@@ -51,13 +55,14 @@ function Chat() {
       setMessages((m) => m.slice(0, -1));
     } finally {
       setSending(false);
+      inputRef.current?.focus();
     }
   }
 
   return (
     <div className="app-frame flex flex-col h-dvh">
       <header className="flex items-center gap-3 px-4 py-4 border-b border-border">
-        <Link to="/home" className="text-muted-foreground hover:text-foreground">
+        <Link to="/chat" className="text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <div>
@@ -67,7 +72,7 @@ function Chat() {
       </header>
 
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-6 pb-32 space-y-4">
-        {messages.length === 0 && (
+        {messages.length === 0 && !sending && (
           <p className="text-center text-sm text-muted-foreground mt-16 px-6">{t("chat.empty")}</p>
         )}
         {messages.map((m, i) => (
@@ -77,7 +82,10 @@ function Chat() {
         {limitReached && (
           <div className="rounded-2xl border border-primary/40 bg-primary/10 p-4 text-sm">
             <p className="mb-3">{t("chat.limit")}</p>
-            <Link to="/paywall" className="inline-block rounded-full bg-primary text-primary-foreground px-4 py-2 text-xs font-medium">
+            <Link
+              to="/paywall"
+              className="inline-block rounded-full bg-primary text-primary-foreground px-4 py-2 text-xs font-medium"
+            >
               {t("chat.limit.cta")}
             </Link>
           </div>
@@ -90,6 +98,7 @@ function Chat() {
       >
         <div className="flex gap-2 items-end">
           <textarea
+            ref={inputRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder={t("chat.placeholder")}
