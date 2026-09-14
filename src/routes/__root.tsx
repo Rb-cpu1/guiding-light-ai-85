@@ -14,7 +14,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { I18nProvider } from "../lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
 import { Toaster } from "sonner";
-import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
+
 
 function NotFoundComponent() {
   return (
@@ -141,7 +141,7 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <I18nProvider>
-        <PaymentTestModeBanner />
+        
         <Outlet />
         <Toaster theme="dark" position="top-center" />
       </I18nProvider>
