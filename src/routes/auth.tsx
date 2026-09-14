@@ -6,9 +6,8 @@ import { toast } from "sonner";
 import { Sparkles, Mail, Lock, User, Eye, EyeOff, ArrowRight } from "lucide-react";
 
 export const Route = createFileRoute("/auth")({
-  validateSearch: (s: Record<string, unknown>) => ({
-    next: typeof s.next === "string" ? s.next : "",
-  }),
+  validateSearch: (s: Record<string, unknown>): { next?: string } =>
+    typeof s.next === "string" && s.next ? { next: s.next } : {},
   component: AuthPage,
 });
 
