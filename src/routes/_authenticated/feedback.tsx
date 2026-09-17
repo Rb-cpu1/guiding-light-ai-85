@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { ArrowLeft, Loader2, Star, Send } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/feedback")({
-  component: FeedbackPage;
+  component: FeedbackPage,
 });
 
 type Row = { id: string; kind: string; rating: number | null; message: string; created_at: string };
