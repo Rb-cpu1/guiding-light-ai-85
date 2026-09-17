@@ -139,6 +139,20 @@ function Profile() {
       </section>
 
       <button
+        onClick={() => navigate({ to: "/feedback" })}
+        className="rounded-2xl bg-card border border-border p-5 text-left hover:border-primary/40 transition"
+      >
+        <p className="text-xs uppercase tracking-widest text-primary mb-1">
+          {lang === "pt" ? "Sugestões e feedback" : "Suggestions & feedback"}
+        </p>
+        <p className="text-sm text-muted-foreground">
+          {lang === "pt"
+            ? "Diz-nos o que melhorar. Lemos todas as ideias."
+            : "Tell us what to improve. We read every idea."}
+        </p>
+      </button>
+
+      <button
         onClick={signOut}
         className="mt-4 rounded-full border border-border py-3 text-sm text-muted-foreground hover:text-destructive hover:border-destructive/40 transition"
       >
